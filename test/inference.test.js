@@ -173,3 +173,10 @@ test('parseWorkerConfig rejects missing paths, numbers, and unknown kinds', () =
   assert.doesNotThrow(() => parseWorkerConfig({ ...noJoiner, kind: 'canary' }));
   assert.throws(() => parseWorkerConfig({ ...base, kind: 'canary', threads: '2' }), /threads/);
 });
+
+test('forced VAD splits (touching segments) never decode the same audio twice', () => {
+  const { sherpa, log } = fakeSherpa({ segments: [[0, 16000], [16000, 32000]], respond: () => 'x' });
+  createTranscriber({ ...base, kind: 'parakeet' }, sherpa)(wav(4), 'auto');
+  const pad = 0.2 * 16000;
+  assert.deepEqual(log.decoded, [16000 + pad, 16000], 'second segment starts where the first (padded) one ended');
+});

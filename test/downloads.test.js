@@ -9,7 +9,7 @@ import { Config } from '../lib/config.js';
 import {
   SpeechDownloadError, classifyDownloadFailure, downloadAsset, matchesAsset, orderModelSources,
 } from '../lib/downloads.js';
-import { inspectRuntime, prepareRuntime, readAssetLock, resolveRuntime } from '../lib/runtime.js';
+import { inspectRuntime, prepareRuntime, readAssetLock, removePartials, resolveRuntime } from '../lib/runtime.js';
 
 const payload = Buffer.from('pinned model bytes '.repeat(1000));
 const sha256 = createHash('sha256').update(payload).digest('hex');
@@ -188,4 +188,15 @@ test('inspectRuntime reports missing files without downloading', async () => {
   const config = Config({ dataRoot: join(root, 'empty'), modelOrigins: ['http://127.0.0.1:1'] });
   assert.equal(await inspectRuntime(config, 'parakeet', signal()), undefined);
   assert.equal(typeof prepareRuntime, 'function');
+});
+
+test('stale partial downloads are removed; recent ones in shared directories are kept', async () => {
+  const dir = join(root, 'partials');
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, 'a.onnx.1.part'), 'x');
+  await writeFile(join(dir, 'keep.onnx'), 'x');
+  assert.equal(await removePartials(dir, 60_000), 0, 'recent partials kept');
+  assert.equal(await removePartials(dir, 0), 1);
+  assert.deepEqual(await readdir(dir), ['keep.onnx']);
+  assert.equal(await removePartials(join(root, 'absent'), 0), 0);
 });

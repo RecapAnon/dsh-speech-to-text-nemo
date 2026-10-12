@@ -14,6 +14,22 @@ importers:
       sherpa-onnx-node:
         specifier: 1.13.8
         version: 1.13.8
+    optionalDependencies:
+      sherpa-onnx-darwin-arm64:
+        specifier: 1.13.8
+        version: 1.13.8
+      sherpa-onnx-darwin-x64:
+        specifier: 1.13.8
+        version: 1.13.8
+      sherpa-onnx-linux-arm64:
+        specifier: 1.13.8
+        version: 1.13.8
+      sherpa-onnx-linux-x64:
+        specifier: 1.13.8
+        version: 1.13.8
+      sherpa-onnx-win-x64:
+        specifier: 1.13.8
+        version: 1.13.8
 
 packages:
 

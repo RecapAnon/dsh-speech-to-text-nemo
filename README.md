@@ -35,6 +35,8 @@ In DSH, install the bundle from this folder with the Plugin Manager, or ask the 
 
 Models are stored under `~/.dsh/speech-to-text/nemo/models/`.
 
+When installed from a local folder, DSH links the profile to that folder (`link:`). The plugin then loads its dependencies (`sherpa-onnx-node` and its native binary) from the folder's own `node_modules`. Keep it in place: run `pnpm install` there after cloning, and don't delete `node_modules`. After changing the code, restart DSH; a running DSH keeps the module it already loaded.
+
 ## Use
 
 1. Open the voice input settings. The recognizer list now includes **Canary 180M Flash (INT8)** and **Parakeet TDT 0.6B v3 (INT8)**. Each has its own preparation card.
@@ -88,7 +90,9 @@ The remaining keys (`vadThreshold`, `minSpeechSeconds`, `minSilenceSeconds`, tim
 - **Pinned downloads.** `runtime/assets.json` fixes the Hugging Face revision, byte size and SHA-256 of every file. Origins are probed in parallel and the first to answer is tried first. On network, HTTP, certificate or integrity failures, the download moves to the next origin. Files download into a temporary `.part` file and are renamed only after verification. Verified files are reused.
 - **Activation does no work.** On start, the plugin checks whether verified files exist and shows each recognizer as ready to wake or as not prepared. It downloads and loads nothing.
 - **One worker process per recognizer.** It is started through DSH's subprocess service, loads its model once, and serves requests one at a time on a loopback port protected by a random token. Cancelling a recording or hitting a timeout stops the worker so no inference keeps running.
-- **Long recordings are split at silences** by Silero VAD, in pieces of at most `segmentSeconds`.
+- **Long recordings are split at silences** by Silero VAD, in pieces of at most `segmentSeconds`. Each piece keeps `segmentPaddingSeconds` of surrounding audio, but no audio is decoded twice when continuous speech is cut at the length limit.
+- **Recordings never wait behind a download.** A recording made while a recognizer is still downloading is refused at once. A recording cancelled while queued is released at once. A recording cancelled mid-inference stops the worker before it returns.
+- **Leftover `.part` files** from an interrupted DSH are deleted the next time that recognizer is prepared.
 - **Canary language.** The requested language is used as both source and target, so Canary transcribes and never translates. Changing language doesn't reload the model.
 - **Canary empty results.** With punctuation on, Canary sometimes ended a normal utterance at its first token and returned nothing. sherpa-onnx 1.13.8 now prevents this itself (it logs `The first generated token is <|endoftext|> … Using the best non-eos token instead`). As a safety net, an empty piece is decoded once more without punctuation.
 
@@ -100,11 +104,12 @@ These were measured on Windows x64 with 2 threads, through the plugin's own down
 |---|---|---|
 | sherpa-onnx sample clips (en/es/de/fr) | all correct | all correct |
 | MINDS-14 es WER | 27.0 % | 24.6 % |
-| Real-time factor (lower is faster) | 0.31 | 0.21 |
-| Peak worker memory | 588 MB | 997 MB |
-| 103 s recording (VAD-split) | 38.7 s | 20.7 s |
+| Real-time factor (lower is faster) | 0.24 | 0.20 |
+| Peak worker memory | 587 MB | 997 MB |
+| 103 s recording (VAD-split) | 21.5 s | 20.9 s |
 | Empty results | 0 / 25 | 0 / 25 |
 | Prepare from scratch (download + verify) | 11 s | 25 s |
+| Prepare with verified files (hash check + load) | 1.9 s | 2.3 s |
 
 Some MINDS-14 reference transcripts are cut short, which inflates WER for both models in the same way. Use the numbers to compare the two models, not as absolute accuracy.
 

@@ -45,6 +45,7 @@ function activate(overrides = {}, runtime = {}) {
   apply(ctx, config, {
     inspect: async () => {
       calls.inspect++;
+      if (runtime.inspectDelayMs) await new Promise((resolve) => setTimeout(resolve, runtime.inspectDelayMs));
       return runtime.cached ? paths : undefined;
     },
     prepare: async (cfg, kind, signal, report) => {
@@ -251,6 +252,85 @@ test('a worker that dies while loading fails preparation with its stderr', async
     const state = await until(canary, ['failed']);
     assert.match(state.message, /exited before readiness: model failed to load/);
     assert.equal(state.steps.find((step) => step.kind === 'load').status, 'failed');
+  } finally {
+    await dispose();
+  }
+});
+
+/** Make the fake worker take a while to load, so requests can queue behind the wake. */
+function slowWake(provider, ms) {
+  const original = provider.preparation.workerConfig.bind(provider.preparation);
+  provider.preparation.workerConfig = (paths) => ({ ...original(paths), startupDelayMs: ms });
+}
+
+test('a prepare queued behind a waking recording, then cancelled, leaves the recognizer ready', async () => {
+  const { providers, subprocess, dispose } = activate({ parakeet: { enabled: false }, idleTimeoutMs: 0 }, { cached: true });
+  try {
+    const canary = providers.get('canary-local');
+    await until(canary, ['standby']);
+    slowWake(canary, 400);
+    const recording = canary.transcribe({ audio: wav, language: 'en' }, AbortSignal.timeout(10_000));
+    await until(canary, ['waking']);
+    canary.preparation.prepare(); // queued: the worker is not published yet
+    await recording;
+    assert.equal(canary.preparation.snapshot().phase, 'ready');
+    await canary.preparation.cancel();
+    assert.equal(canary.preparation.snapshot().phase, 'ready', 'not wedged in cancelled');
+    assert.equal(subprocess.children.size, 1);
+    const next = await canary.transcribe({ audio: wav, language: 'es' }, AbortSignal.timeout(10_000));
+    assert.match(next.text, /^canary:es:/);
+  } finally {
+    await dispose();
+  }
+});
+
+test('a prepare queued behind the cache check, then cancelled, returns to standby', async () => {
+  const { providers, calls, dispose } = activate({ parakeet: { enabled: false } }, { cached: true, inspectDelayMs: 300 });
+  try {
+    const canary = providers.get('canary-local');
+    canary.preparation.prepare();
+    await canary.preparation.cancel();
+    assert.equal((await until(canary, ['standby', 'cancelled', 'failed'])).phase, 'standby');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    assert.equal(canary.preparation.snapshot().phase, 'standby');
+    assert.equal(calls.prepare, 0);
+    const result = await canary.transcribe({ audio: wav, language: 'en' }, AbortSignal.timeout(10_000));
+    assert.match(result.text, /^canary:en:/, 'recording still works');
+  } finally {
+    await dispose();
+  }
+});
+
+test('a recording during a download is refused at once instead of waiting behind it', async () => {
+  const { providers, dispose } = activate({ parakeet: { enabled: false } }, { hang: true });
+  try {
+    const canary = providers.get('canary-local');
+    await until(canary, ['unprepared']);
+    canary.preparation.prepare();
+    await until(canary, ['downloading']);
+    const started = performance.now();
+    await assert.rejects(canary.transcribe({ audio: wav, language: 'en' }, AbortSignal.timeout(10_000)), /Prepare the local speech provider/);
+    assert.ok(performance.now() - started < 200);
+  } finally {
+    await dispose();
+  }
+});
+
+test('a recording cancelled while queued is released at once; the running one is unaffected', async () => {
+  const { providers, subprocess, dispose } = activate({ canary: { enabled: false } }, { cached: true });
+  try {
+    const parakeet = providers.get('parakeet-local');
+    await until(parakeet, ['standby']);
+    const slow = parakeet.transcribe({ audio: wav, language: 'fr' }, AbortSignal.timeout(10_000)); // ~3 s of inference
+    const controller = new AbortController();
+    const queued = parakeet.transcribe({ audio: wav, language: 'en' }, controller.signal);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const cancelledAt = performance.now();
+    controller.abort(new Error('user cancelled'));
+    await assert.rejects(queued, /user cancelled/);
+    assert.ok(performance.now() - cancelledAt < 200, 'released without waiting for the running job');
+    assert.match((await slow).text, /^parakeet:fr:/);
+    assert.equal(subprocess.children.size, 1, 'the queued cancellation did not kill the worker');
   } finally {
     await dispose();
   }

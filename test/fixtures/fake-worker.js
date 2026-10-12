@@ -8,6 +8,7 @@ if (config.failStartup) {
   process.stderr.write('model failed to load');
   process.exit(3);
 }
+if (config.startupDelayMs) await new Promise((resolve) => setTimeout(resolve, config.startupDelayMs));
 const { port } = await startRecognitionServer(token, config.maxAudioBytes, (audio, language) => {
   if (language === 'xx') throw new SpeechInputError('Unsupported language: xx');
   if (language === 'crash') throw new Error('native failure');

@@ -45,6 +45,13 @@
     "@deepseek-ai/schemastery": "~3.18.4",
     "sherpa-onnx-node": "1.13.8"
   },
+  "optionalDependencies": {
+    "sherpa-onnx-darwin-arm64": "1.13.8",
+    "sherpa-onnx-darwin-x64": "1.13.8",
+    "sherpa-onnx-linux-arm64": "1.13.8",
+    "sherpa-onnx-linux-x64": "1.13.8",
+    "sherpa-onnx-win-x64": "1.13.8"
+  },
   "peerDependencies": {
     "@deepseek-ai/dsh-experimental-speech-to-text": "0.2.0-rc.2",
     "@deepseek-ai/dsh-subprocess": "0.2.0-rc.2"
