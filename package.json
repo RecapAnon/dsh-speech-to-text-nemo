@@ -1,0 +1,52 @@
+{
+  "name": "dsh-speech-to-text-nemo",
+  "version": "0.1.0",
+  "description": "Local NVIDIA NeMo speech recognizers (Canary 180M Flash, Parakeet TDT 0.6B v3) for DeepSeek Harness voice input",
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "lib/*.js",
+    "runtime/assets.json",
+    "locale/*.json",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test --test-timeout=20000 \"test/*.test.js\"",
+    "e2e": "node scripts/e2e.mjs"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "speech-to-text",
+    "nemo",
+    "canary",
+    "parakeet",
+    "sherpa-onnx"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.4",
+    "sherpa-onnx-node": "1.13.8"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-experimental-speech-to-text": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-subprocess": "0.2.0-rc.2"
+  }
+}

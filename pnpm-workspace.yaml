@@ -1,0 +1,5 @@
+packages:
+  - .
+
+# The DSH peers are provided by the DSH installation at runtime; tests use fakes.
+autoInstallPeers: false

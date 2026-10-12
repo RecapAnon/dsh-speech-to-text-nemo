@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "NeMo Speech-to-Text (Canary, Parakeet)",
+    "description": "Local NVIDIA NeMo recognizers for voice input: Canary 180M Flash (English, Spanish, German, French) and Parakeet TDT 0.6B v3 (25 European languages)."
+  }
+}

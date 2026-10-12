@@ -1,0 +1,7 @@
+# Adds the NeMo recognizers to the official voice input bundle's speech service.
+# Requires @deepseek-ai/dsh-experimental-voice-input-bundle (it provides `speechToText`).
+- insert:
+    - id: speech-to-text-nemo
+      name: dsh-speech-to-text-nemo
+      config:
+        dataRoot: !!js dshHomePath('speech-to-text', 'nemo')
