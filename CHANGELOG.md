@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 — 2026-10-19
+
+- Compatible with DSH 0.2.1-rc.2. The exact peer pins for `@deepseek-ai/dsh-experimental-speech-to-text` and `@deepseek-ai/dsh-subprocess` move from `0.2.0-rc.2` to `0.2.1-rc.2`. Before this, DSH 0.2.1-rc.2 skipped the bundle at start-up as incompatible.
+- No code changes. Between 0.2.0-rc.2 and 0.2.1-rc.2, the `lib/` code and type declarations of both packages are byte-identical; only READMEs, locale files and dependency versions changed. In `dsh-subprocess-local`, the provider behind `ctx.subprocess`, the changes are in Linux user-systemd scope selection and Windows terminal (PTY) allocation. This plugin uses neither: it starts ordinary worker processes. The bundled SenseVoice provider still uses sherpa-onnx 1.13.8.
+- Tested:
+  - 38 unit tests pass.
+  - In the DSH 0.2.1-rc.2 web profile, the bundle was re-enabled and `include:speech-to-text-nemo` is active. Not yet tested by recording in the DSH UI.
+
 ## 0.1.0 — 2026-10-12
 
 - First version. It registers two local recognizers with the DSH speech service:

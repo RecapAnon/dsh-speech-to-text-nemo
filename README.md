@@ -15,12 +15,12 @@ Audio never leaves the machine. Models download only when you prepare a recogniz
 
 ## Requirements
 
-- DeepSeek Harness **0.2.0-rc.2** with the official voice input bundle (`@deepseek-ai/dsh-experimental-voice-input-bundle`) enabled. It provides the speech service this plugin registers with. Without it, this plugin waits and does nothing.
+- DeepSeek Harness **0.2.1-rc.2** with the official voice input bundle (`@deepseek-ai/dsh-experimental-voice-input-bundle`) enabled. It provides the speech service this plugin registers with. Without it, this plugin waits and does nothing.
 - Windows x64, Linux x64/arm64, or macOS. Disk and memory per recognizer:
   - Canary: about 300 MB disk and 0.6 GB memory while loaded.
   - Parakeet: about 800 MB disk and 1.0 GB memory while loaded.
 
-The DSH voice packages are experimental, so `package.json` pins them to exactly `0.2.0-rc.2`. After a DSH upgrade, DSH reports this plugin as incompatible until it is re-tested and the pin is raised.
+The DSH voice packages are experimental, so `package.json` pins them to exactly `0.2.1-rc.2`. After a DSH upgrade, DSH reports this plugin as incompatible until it is re-tested and the pin is raised.
 
 ## Install
 
